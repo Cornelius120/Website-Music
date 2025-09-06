@@ -8,7 +8,7 @@ const songs = [
     title: "Golden",
     artist: "Sony Animation",
     genre: "Pop",
-    src: "https://archive.org/download/golden-official-lyric-video-kpop-demon-hunters-sony-animation_202509/%E2%80%9CGolden%E2%80%9D%20Official%20Lyric%20Video%20%EF%BD%9C%20KPop%20Demon%20Hunters%20%EF%BD%9C%20Sony%20Animation.m4a", // Contoh dari archive.org
+    src: "https://archive.org/download/golden-official-lyric-video-kpop-demon-hunters-sony-animation_202509/%E2%80%9CGolden%E2%80%9D%20Official%20Lyric%20Video%20%EF%BD%9C%20KPop%20Demon%20Hunters%20%EF%BD%9C%20Sony%20Animation.m4a",
     cover: "https://cdn.imgpile.com/f/T1VtF4I_xl.jpg",
   },
   {
@@ -20,13 +20,12 @@ const songs = [
     cover: "https://cdn.imgpile.com/f/RftTaDC_xl.jpg",
   },
   {
-    id: "someone-you-loved-lewis-capaldi",
-    title: "Someone You Loved",
-    artist: "Lewis Capaldi",
-    genre: "Ballad",
-    src: "https://archive.org/download/LewisCapaldiSomeoneYouLoved_201909/Lewis%20Capaldi%20-%20Someone%20You%20Loved.mp3", // Contoh dari archive.org
-    cover:
-      "https://upload.wikimedia.org/wikipedia/en/thumb/8/87/Someone_You_Loved_-_Lewis_Capaldi.png/220px-Someone_You_Loved_-_Lewis_Capaldi.png",
+    id: "ride-twenty-one-pilots",
+    title: "Ride",
+    artist: "Twenty One Pilots",
+    genre: "Pop",
+    src: "https://p-tok1.pcloud.com/cBZinn8yy7Zbioj9e7ZdGze7ZZTD1GVkZ2ZZEJJZkZs4VQZj4ZdLZ1YZOYZhRZNFZmQZR8Zt8ZJmZKYZ04ZoQZLzZPHrD5ZG62zl5ad51JmiW4a75YNLHjVJuDk/twenty%20one%20pilots%20-%20Ride%20%28Official%20Video%29.mp3",
+    cover: "https://cdn.imgpile.com/f/19r6Hfc_xl.jpg",
   },
   {
     id: "monokrom-tulus",
