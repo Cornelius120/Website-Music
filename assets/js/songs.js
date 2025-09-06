@@ -16,7 +16,7 @@ const songs = [
     title: "BARUDAK PHONK TERROR",
     artist: " DJ VINNIE PARGOY",
     genre: "hip-hop",
-    src: "https://drive.google.com/file/d/13MCBNXsP8mOhvdnJTh7Qb092Mk2lolZN/preview", // Contoh dari archive.org
+    src: "https://vidcache.net:8161/static/c16f7c5618f8cac3d9e6c32fcf92af4b4462be21/BARUDAK PHONK TERROR.m4a",
     cover: "https://cdn.imgpile.com/f/RftTaDC_xl.jpg",
   },
   {
