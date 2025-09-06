@@ -4,6 +4,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const songListElement = document.getElementById("song-list");
   const searchBar = document.getElementById("search-bar");
   const sectionTitle = document.getElementById("section-title");
+  const allSongsBtn = document.getElementById("all-songs-btn");
+  const bookmarkedSongsBtn = document.getElementById("bookmarked-songs-btn");
+  const notification = document.getElementById("notification");
 
   // Elemen Audio
   const audioPlayer = document.getElementById("audio-player");
@@ -26,6 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let isPlaying = false;
   let bookmarkedSongs = [];
   let displayedSongs = []; // Daftar lagu yang diacak dan ditampilkan
+  let isBookmarkViewActive = false;
+  let currentPlayContext = []; // Daftar lagu yang sedang aktif (semua, bookmark, atau hasil search)
 
   // --- FUNGSI-FUNGSI ---
 
@@ -33,14 +38,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function shuffle(array) {
     let currentIndex = array.length,
       randomIndex;
-
-    // Selama masih ada elemen untuk diacak
     while (currentIndex !== 0) {
-      // Pilih elemen yang tersisa secara acak
       randomIndex = Math.floor(Math.random() * currentIndex);
       currentIndex--;
-
-      // Dan tukar dengan elemen saat ini
       [array[currentIndex], array[randomIndex]] = [
         array[randomIndex],
         array[currentIndex],
@@ -49,12 +49,10 @@ document.addEventListener("DOMContentLoaded", () => {
     return array;
   }
 
-  // Memuat bookmark dari localStorage saat aplikasi dimulai
+  // Memuat bookmark dari localStorage
   function loadBookmarks() {
     const bookmarks = localStorage.getItem("bookmarkedSongs");
-    if (bookmarks) {
-      bookmarkedSongs = JSON.parse(bookmarks);
-    }
+    if (bookmarks) bookmarkedSongs = JSON.parse(bookmarks);
   }
 
   // Menyimpan bookmark ke localStorage
@@ -62,21 +60,34 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("bookmarkedSongs", JSON.stringify(bookmarkedSongs));
   }
 
+  // Menampilkan notifikasi
+  function showNotification(message) {
+    notification.textContent = message;
+    notification.classList.add("show");
+    setTimeout(() => {
+      notification.classList.remove("show");
+    }, 2000); // Sembunyikan setelah 2 detik
+  }
+
   // Menampilkan lagu ke dalam daftar
   function renderSongs(songsToRender) {
-    songListElement.innerHTML = ""; // Kosongkan daftar sebelum diisi ulang
+    songListElement.innerHTML = "";
+    currentPlayContext = songsToRender; // Update konteks pemutaran
     if (songsToRender.length === 0) {
-      songListElement.innerHTML =
-        '<p class="empty-message">Lagu tidak ditemukan.</p>';
+      songListElement.innerHTML = `<p class="empty-message">${
+        isBookmarkViewActive
+          ? "Anda belum punya bookmark."
+          : "Lagu tidak ditemukan."
+      }</p>`;
       return;
     }
 
     songsToRender.forEach((song, index) => {
       const isBookmarked = bookmarkedSongs.includes(song.id);
       const li = document.createElement("li");
-      li.classList.add("song-item");
-      li.dataset.id = song.id; // Menyimpan ID untuk permalink
-      li.dataset.index = index; // Menyimpan index dari daftar yang ditampilkan SAAT INI
+      li.className = "song-item";
+      li.dataset.id = song.id;
+      li.dataset.index = index;
 
       li.innerHTML = `
                 <img src="${song.cover}" alt="${song.title}" class="song-cover">
@@ -85,6 +96,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     <p class="song-item-artist">${song.artist}</p>
                 </div>
                 <div class="song-actions">
+                    <button class="permalink-btn" title="Salin Link Lagu">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.72"></path><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.72-1.72"></path></svg>
+                    </button>
                     <button class="bookmark-btn ${
                       isBookmarked ? "bookmarked" : ""
                     }" title="Bookmark">
@@ -100,6 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Memuat detail lagu ke player
   function loadSong(song) {
+    if (!song) return;
     playerTitle.textContent = song.title;
     playerArtist.textContent = song.artist;
     playerCover.src = song.cover;
@@ -108,17 +123,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Memutar lagu
   function playSong() {
+    if (!currentPlayContext[currentSongIndex]) return;
     isPlaying = true;
     playPauseBtn.title = "Pause";
     audioPlayer.play();
     playIcon.style.display = "none";
     pauseIcon.style.display = "block";
-    // Menandai lagu yang sedang diputar di daftar
     document
       .querySelectorAll(".song-item")
       .forEach((item) => item.classList.remove("playing"));
     const currentSongElement = document.querySelector(
-      `[data-id="${displayedSongs[currentSongIndex].id}"]`
+      `[data-id="${currentPlayContext[currentSongIndex].id}"]`
     );
     if (currentSongElement) {
       currentSongElement.classList.add("playing");
@@ -136,30 +151,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Fungsi toggle untuk tombol play/pause
   function togglePlayPause() {
-    if (isPlaying) {
-      pauseSong();
-    } else {
-      playSong();
+    if (audioPlayer.src) {
+      // Hanya toggle jika ada lagu yang dimuat
+      if (isPlaying) pauseSong();
+      else playSong();
     }
   }
 
   // Lagu sebelumnya
   function prevSong() {
-    currentSongIndex--;
-    if (currentSongIndex < 0) {
-      currentSongIndex = displayedSongs.length - 1;
-    }
-    loadSong(displayedSongs[currentSongIndex]);
+    currentSongIndex =
+      (currentSongIndex - 1 + currentPlayContext.length) %
+      currentPlayContext.length;
+    loadSong(currentPlayContext[currentSongIndex]);
     playSong();
   }
 
   // Lagu berikutnya
   function nextSong() {
-    currentSongIndex++;
-    if (currentSongIndex > displayedSongs.length - 1) {
-      currentSongIndex = 0;
-    }
-    loadSong(displayedSongs[currentSongIndex]);
+    currentSongIndex = (currentSongIndex + 1) % currentPlayContext.length;
+    loadSong(currentPlayContext[currentSongIndex]);
     playSong();
   }
 
@@ -167,9 +178,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateProgress(e) {
     const { duration, currentTime } = e.srcElement;
     const progressPercent = (currentTime / duration) * 100;
-    progressBar.value = progressPercent;
-
-    // Format waktu
+    progressBar.value = isNaN(progressPercent) ? 0 : progressPercent;
     durationEl.textContent = formatTime(duration);
     currentTimeEl.textContent = formatTime(currentTime);
   }
@@ -179,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const width = this.clientWidth;
     const clickX = e.offsetX;
     const duration = audioPlayer.duration;
-    audioPlayer.currentTime = (clickX / width) * duration;
+    if (duration) audioPlayer.currentTime = (clickX / width) * duration;
   }
 
   // Format waktu dari detik menjadi MM:SS
@@ -194,7 +203,6 @@ document.addEventListener("DOMContentLoaded", () => {
   function toggleBookmark(songId, button) {
     const songIndex = bookmarkedSongs.indexOf(songId);
     const svg = button.querySelector("svg");
-
     if (songIndex === -1) {
       bookmarkedSongs.push(songId);
       svg.setAttribute("fill", "currentColor");
@@ -205,113 +213,119 @@ document.addEventListener("DOMContentLoaded", () => {
       button.classList.remove("bookmarked");
     }
     saveBookmarks();
+    if (isBookmarkViewActive) {
+      const bookmarkedList = songs.filter((song) =>
+        bookmarkedSongs.includes(song.id)
+      );
+      renderSongs(bookmarkedList);
+    }
   }
 
   // Fungsi untuk live search
   function filterSongs() {
     const query = searchBar.value.toLowerCase();
-    // Selalu filter dari daftar lagu yang sudah diacak aslinya
-    const originalShuffledSongs = [...songs].sort(
-      (a, b) => displayedSongs.indexOf(a) - displayedSongs.indexOf(b)
-    );
+    let sourceList = isBookmarkViewActive
+      ? songs.filter((s) => bookmarkedSongs.includes(s.id))
+      : displayedSongs;
 
     if (!query) {
-      // Jika query kosong, tampilkan daftar acak asli
-      renderSongs(displayedSongs);
-      sectionTitle.textContent = "Semua Lagu";
+      renderSongs(sourceList);
       return;
     }
 
-    const filteredSongs = displayedSongs.filter(
+    const filteredSongs = sourceList.filter(
       (song) =>
         song.title.toLowerCase().includes(query) ||
         song.artist.toLowerCase().includes(query) ||
         song.genre.toLowerCase().includes(query)
     );
     renderSongs(filteredSongs);
-    sectionTitle.textContent = query ? `Hasil untuk "${query}"` : "Semua Lagu";
   }
 
   // Fungsi untuk menangani permalink
   function handlePermalink() {
     const hash = window.location.hash.substring(1);
-    if (hash) {
-      const songToHighlight = songs.find((song) => song.id === hash);
-      if (songToHighlight) {
-        // Temukan index lagu ini di dalam daftar yang sudah diacak
-        const songIndexInShuffled = displayedSongs.findIndex(
-          (song) => song.id === hash
-        );
-        if (songIndexInShuffled !== -1) {
-          currentSongIndex = songIndexInShuffled;
-          loadSong(songToHighlight);
+    if (!hash) return;
 
-          const element = document.querySelector(`[data-id="${hash}"]`);
-          if (element) {
-            element.scrollIntoView({ behavior: "smooth", block: "center" });
-            element.classList.add("highlight");
-            // Hapus highlight setelah animasi selesai
-            setTimeout(() => {
-              element.classList.remove("highlight");
-            }, 2000);
-          }
+    const songToHighlight = songs.find((song) => song.id === hash);
+    if (songToHighlight) {
+      const songIndexInShuffled = displayedSongs.findIndex(
+        (song) => song.id === hash
+      );
+      if (songIndexInShuffled !== -1) {
+        currentSongIndex = songIndexInShuffled;
+        loadSong(songToHighlight);
+        currentPlayContext = displayedSongs;
+
+        const element = document.querySelector(`[data-id="${hash}"]`);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth", block: "center" });
+          element.classList.add("highlight");
+          setTimeout(() => element.classList.remove("highlight"), 2000);
         }
       }
     }
   }
 
   // --- EVENT LISTENERS ---
-
-  // Pencarian
   searchBar.addEventListener("input", filterSongs);
-
-  // Kontrol Player
   playPauseBtn.addEventListener("click", togglePlayPause);
   prevBtn.addEventListener("click", prevSong);
   nextBtn.addEventListener("click", nextSong);
-
-  // Progress Bar
   audioPlayer.addEventListener("timeupdate", updateProgress);
-  audioPlayer.addEventListener("loadedmetadata", () => {
-    durationEl.textContent = formatTime(audioPlayer.duration);
-  });
-  progressBar.addEventListener("click", setProgress);
-
-  // Lagu selesai, putar selanjutnya
+  audioPlayer.addEventListener(
+    "loadedmetadata",
+    () => (durationEl.textContent = formatTime(audioPlayer.duration))
+  );
+  progressBar.addEventListener("input", setProgress);
   audioPlayer.addEventListener("ended", nextSong);
 
-  // Klik pada daftar lagu (Play atau Bookmark)
   songListElement.addEventListener("click", (e) => {
     const songItem = e.target.closest(".song-item");
-    const bookmarkBtn = e.target.closest(".bookmark-btn");
+    if (!songItem) return;
 
-    if (bookmarkBtn) {
+    const bookmarkBtn = e.target.closest(".bookmark-btn");
+    const permalinkBtn = e.target.closest(".permalink-btn");
+
+    if (permalinkBtn) {
+      const songId = songItem.dataset.id;
+      const permalink = `${window.location.origin}${window.location.pathname}#${songId}`;
+      const tempInput = document.createElement("textarea");
+      tempInput.value = permalink;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand("copy");
+      document.body.removeChild(tempInput);
+      showNotification("Link lagu disalin!");
+    } else if (bookmarkBtn) {
       const songId = songItem.dataset.id;
       toggleBookmark(songId, bookmarkBtn);
-    } else if (songItem) {
-      const clickedIndex = parseInt(songItem.dataset.index);
-      const clickedId = songItem.dataset.id;
-
-      // Perbarui daftar lagu yang sedang diputar berdasarkan apa yang ditampilkan
-      const currentRenderedIds = Array.from(songListElement.children).map(
-        (li) => li.dataset.id
-      );
-      const isFiltered = currentRenderedIds.length !== displayedSongs.length;
-
-      const playContext = isFiltered
-        ? songs.filter((s) => currentRenderedIds.includes(s.id))
-        : displayedSongs;
-
-      currentSongIndex = playContext.findIndex((s) => s.id === clickedId);
-
-      loadSong(playContext[currentSongIndex]);
+    } else {
+      currentSongIndex = parseInt(songItem.dataset.index);
+      loadSong(currentPlayContext[currentSongIndex]);
       playSong();
     }
   });
 
+  allSongsBtn.addEventListener("click", () => {
+    isBookmarkViewActive = false;
+    allSongsBtn.classList.add("active");
+    bookmarkedSongsBtn.classList.remove("active");
+    sectionTitle.textContent = "Semua Lagu";
+    filterSongs(); // Gunakan filter untuk merender ulang dengan source yang benar
+  });
+
+  bookmarkedSongsBtn.addEventListener("click", () => {
+    isBookmarkViewActive = true;
+    bookmarkedSongsBtn.classList.add("active");
+    allSongsBtn.classList.remove("active");
+    sectionTitle.textContent = "Lagu Bookmark";
+    filterSongs(); // Gunakan filter untuk merender ulang dengan source yang benar
+  });
+
   // --- INISIALISASI ---
   loadBookmarks();
-  displayedSongs = shuffle([...songs]); // Acak lagu saat pertama kali dimuat
-  renderSongs(displayedSongs); // Tampilkan lagu yang sudah diacak
+  displayedSongs = shuffle([...songs]);
+  renderSongs(displayedSongs);
   handlePermalink();
 });

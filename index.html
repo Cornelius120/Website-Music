@@ -39,15 +39,32 @@
           <input
             type="text"
             id="search-bar"
-            placeholder="Cari judul, artis, atau genre..."
+            placeholder="Cari di antara lagu yang tampil..."
           />
         </div>
       </header>
 
       <!-- Daftar Lagu -->
       <main class="song-list-container">
-        <!-- Judul akan berubah berdasarkan filter -->
-        <h2 id="section-title" class="section-title">Semua Lagu</h2>
+        <div class="main-header">
+          <h2 id="section-title" class="section-title">Semua Lagu</h2>
+          <div class="view-toggles">
+            <button
+              id="all-songs-btn"
+              class="view-toggle-btn active"
+              title="Tampilkan Semua Lagu"
+            >
+              Semua
+            </button>
+            <button
+              id="bookmarked-songs-btn"
+              class="view-toggle-btn"
+              title="Tampilkan Lagu Bookmark"
+            >
+              Bookmark
+            </button>
+          </div>
+        </div>
         <ul id="song-list" class="song-list">
           <!-- Lagu akan dimasukkan di sini oleh JavaScript -->
         </ul>
@@ -55,6 +72,7 @@
 
       <!-- Pemutar Musik (Fixed di Bawah) -->
       <footer class="music-player" id="music-player">
+        <!-- ... Konten footer tetap sama dari sebelumnya ... -->
         <div class="player-content">
           <div class="song-info">
             <img
@@ -169,6 +187,9 @@
 
       <!-- Elemen Audio yang Tersembunyi -->
       <audio id="audio-player"></audio>
+
+      <!-- Notifikasi untuk feedback (misal: link disalin) -->
+      <div id="notification" class="notification"></div>
     </div>
 
     <!-- File JavaScript kita -->
