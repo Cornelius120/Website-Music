@@ -25,8 +25,29 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentSongIndex = 0;
   let isPlaying = false;
   let bookmarkedSongs = [];
+  let displayedSongs = []; // Daftar lagu yang diacak dan ditampilkan
 
   // --- FUNGSI-FUNGSI ---
+
+  // Fungsi untuk mengacak urutan array (Fisher-Yates Shuffle)
+  function shuffle(array) {
+    let currentIndex = array.length,
+      randomIndex;
+
+    // Selama masih ada elemen untuk diacak
+    while (currentIndex !== 0) {
+      // Pilih elemen yang tersisa secara acak
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex--;
+
+      // Dan tukar dengan elemen saat ini
+      [array[currentIndex], array[randomIndex]] = [
+        array[randomIndex],
+        array[currentIndex],
+      ];
+    }
+    return array;
+  }
 
   // Memuat bookmark dari localStorage saat aplikasi dimulai
   function loadBookmarks() {
@@ -55,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const li = document.createElement("li");
       li.classList.add("song-item");
       li.dataset.id = song.id; // Menyimpan ID untuk permalink
-      li.dataset.index = songs.findIndex((s) => s.id === song.id); // Menyimpan index asli
+      li.dataset.index = index; // Menyimpan index dari daftar yang ditampilkan SAAT INI
 
       li.innerHTML = `
                 <img src="${song.cover}" alt="${song.title}" class="song-cover">
@@ -96,9 +117,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document
       .querySelectorAll(".song-item")
       .forEach((item) => item.classList.remove("playing"));
-    document
-      .querySelector(`[data-id="${songs[currentSongIndex].id}"]`)
-      ?.classList.add("playing");
+    const currentSongElement = document.querySelector(
+      `[data-id="${displayedSongs[currentSongIndex].id}"]`
+    );
+    if (currentSongElement) {
+      currentSongElement.classList.add("playing");
+    }
   }
 
   // Menghentikan lagu
@@ -123,19 +147,19 @@ document.addEventListener("DOMContentLoaded", () => {
   function prevSong() {
     currentSongIndex--;
     if (currentSongIndex < 0) {
-      currentSongIndex = songs.length - 1;
+      currentSongIndex = displayedSongs.length - 1;
     }
-    loadSong(songs[currentSongIndex]);
+    loadSong(displayedSongs[currentSongIndex]);
     playSong();
   }
 
   // Lagu berikutnya
   function nextSong() {
     currentSongIndex++;
-    if (currentSongIndex > songs.length - 1) {
+    if (currentSongIndex > displayedSongs.length - 1) {
       currentSongIndex = 0;
     }
-    loadSong(songs[currentSongIndex]);
+    loadSong(displayedSongs[currentSongIndex]);
     playSong();
   }
 
@@ -186,7 +210,19 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fungsi untuk live search
   function filterSongs() {
     const query = searchBar.value.toLowerCase();
-    const filteredSongs = songs.filter(
+    // Selalu filter dari daftar lagu yang sudah diacak aslinya
+    const originalShuffledSongs = [...songs].sort(
+      (a, b) => displayedSongs.indexOf(a) - displayedSongs.indexOf(b)
+    );
+
+    if (!query) {
+      // Jika query kosong, tampilkan daftar acak asli
+      renderSongs(displayedSongs);
+      sectionTitle.textContent = "Semua Lagu";
+      return;
+    }
+
+    const filteredSongs = displayedSongs.filter(
       (song) =>
         song.title.toLowerCase().includes(query) ||
         song.artist.toLowerCase().includes(query) ||
@@ -202,18 +238,23 @@ document.addEventListener("DOMContentLoaded", () => {
     if (hash) {
       const songToHighlight = songs.find((song) => song.id === hash);
       if (songToHighlight) {
-        const songIndex = songs.indexOf(songToHighlight);
-        currentSongIndex = songIndex;
-        loadSong(songToHighlight);
+        // Temukan index lagu ini di dalam daftar yang sudah diacak
+        const songIndexInShuffled = displayedSongs.findIndex(
+          (song) => song.id === hash
+        );
+        if (songIndexInShuffled !== -1) {
+          currentSongIndex = songIndexInShuffled;
+          loadSong(songToHighlight);
 
-        const element = document.querySelector(`[data-id="${hash}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: "smooth", block: "center" });
-          element.classList.add("highlight");
-          // Hapus highlight setelah animasi selesai
-          setTimeout(() => {
-            element.classList.remove("highlight");
-          }, 2000);
+          const element = document.querySelector(`[data-id="${hash}"]`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+            element.classList.add("highlight");
+            // Hapus highlight setelah animasi selesai
+            setTimeout(() => {
+              element.classList.remove("highlight");
+            }, 2000);
+          }
         }
       }
     }
@@ -248,14 +289,29 @@ document.addEventListener("DOMContentLoaded", () => {
       const songId = songItem.dataset.id;
       toggleBookmark(songId, bookmarkBtn);
     } else if (songItem) {
-      currentSongIndex = parseInt(songItem.dataset.index);
-      loadSong(songs[currentSongIndex]);
+      const clickedIndex = parseInt(songItem.dataset.index);
+      const clickedId = songItem.dataset.id;
+
+      // Perbarui daftar lagu yang sedang diputar berdasarkan apa yang ditampilkan
+      const currentRenderedIds = Array.from(songListElement.children).map(
+        (li) => li.dataset.id
+      );
+      const isFiltered = currentRenderedIds.length !== displayedSongs.length;
+
+      const playContext = isFiltered
+        ? songs.filter((s) => currentRenderedIds.includes(s.id))
+        : displayedSongs;
+
+      currentSongIndex = playContext.findIndex((s) => s.id === clickedId);
+
+      loadSong(playContext[currentSongIndex]);
       playSong();
     }
   });
 
   // --- INISIALISASI ---
   loadBookmarks();
-  renderSongs(songs);
+  displayedSongs = shuffle([...songs]); // Acak lagu saat pertama kali dimuat
+  renderSongs(displayedSongs); // Tampilkan lagu yang sudah diacak
   handlePermalink();
 });
