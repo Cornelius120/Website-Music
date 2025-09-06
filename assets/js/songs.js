@@ -12,13 +12,12 @@ const songs = [
     cover: "https://cdn.imgpile.com/f/T1VtF4I_xl.jpg",
   },
   {
-    id: "blinding-lights-the-weeknd",
-    title: "Blinding Lights",
-    artist: "The Weeknd",
-    genre: "Synth-pop",
-    src: "https://archive.org/download/TheWeeknd-BlindingLights/The%20Weeknd%20-%20Blinding%20Lights.mp3", // Contoh dari archive.org
-    cover:
-      "https://upload.wikimedia.org/wikipedia/en/e/e6/The_Weeknd_-_Blinding_Lights.png",
+    id: "barudak-phonk-terror",
+    title: "BARUDAK PHONK TERROR",
+    artist: " DJ VINNIE PARGOY",
+    genre: "hip-hop",
+    src: "https://drive.google.com/uc?export=download&id=13MCBNXsP8mOhvdnJTh7Qb092Mk2lolZN", // Contoh dari archive.org
+    cover: "https://cdn.imgpile.com/f/RftTaDC_xl.jpg",
   },
   {
     id: "someone-you-loved-lewis-capaldi",
