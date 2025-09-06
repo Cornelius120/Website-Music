@@ -16,7 +16,7 @@ const songs = [
     title: "BARUDAK PHONK TERROR",
     artist: " DJ VINNIE PARGOY",
     genre: "hip-hop",
-    src: "https://archive.org/download/barudak-phonk-terror/BARUDAK%20PHONK%20TERROR.m4a",
+    src: "https://drive.usercontent.google.com/download?id=13MCBNXsP8mOhvdnJTh7Qb092Mk2lolZN&export=download&authuser=5",
     cover: "https://cdn.imgpile.com/f/RftTaDC_xl.jpg",
   },
   {
